@@ -9,18 +9,18 @@ function die {
 # This script is run on the host.
 # It launches the docker container and runs our hello world command.
 
-PORT=$(docker run -i -t --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} cat /config/port)
+PORT=$(docker run -i -t --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "cat /config/port")
 if [ -z "$PORT" ]; then die "Run configure first!" ; fi
 RVAL=$?
 docker rm "${SERVICENAME}-run" >/dev/null 2>&1
 if [ "$RVAL" -ne 0 ]; then die "Failed to get port. Please run configure first." ; fi
 # Run the service. Can't use --rm as we don't want volumes cleared.
 # DOCKEROPTS, SERVICENAME AND IMAGENAME are set by _variables.
-docker run -d=true --name="${SERVICENAME}-run" -h "${HOSTNAME}"         \
-               ${DOCKEROPTS[@]}  ${IMAGENAME}                           \
-               "-p=${PORT}:25565" "-p=${PORT}:25565/udp"                \
-               helloworld ${SERVICENAME} ${IMAGENAME}
+docker run -d=true --name="${SERVICENAME}-run" -h "${HOSTNAME}"              \
+               ${DOCKEROPTS[@]}  -p="${PORT}:25565" -p="${PORT}:25565/udp"   \
+               ${IMAGENAME}                           
 RVAL=$?
-docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+#docker rm "${SERVICENAME}-run" >/dev/null 2>&1
 if [ "$RVAL" -ne 0 ]; then die "Failed to launch minecraft on port $PORT :(" ; fi
 exit "$RVAL"
+
