@@ -1,12 +1,9 @@
-# dr-minecraft
+#!/bin/bash
+source "$( dirname "$(readlink -f "$0")" )/_variables"
 
-```
-dr minecraft install j842/dr-minecraft
-minecraft configure 25565
-minecraft run
-```
-
-```
+# SERVICENAME and IMAGENAME are provided by _variables.
+cat <<EOF >&2
+   
 NAME
    ${SERVICENAME} - Runs minecraft
        
@@ -17,4 +14,4 @@ SYNOPSIS
    
 DESCRIPTION
    Built from ${IMAGENAME}.
-```
+EOF

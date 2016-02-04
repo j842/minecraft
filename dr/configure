@@ -1,0 +1,16 @@
+#!/bin/bash
+source "$( dirname "$(readlink -f "$0")" )/_variables"
+
+function die {
+   echo "$1">&2
+   exit 1
+}
+
+if [ ! -v "$1" ]; then die "Usage:   ${SERVICENAME} configure PORT"; fi
+PORT="$1"
+
+docker run -i -t --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} echo "$PORT" > /config/port
+RVAL=$?
+docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+if [ "$RVAL" -ne 0 ]; then die "Failed to configure minecraft on port $PORT :(" ; fi
+exit "$RVAL"
