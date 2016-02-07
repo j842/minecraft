@@ -18,26 +18,25 @@ function die {
 # https://gist.github.com/ekristen/11254304
 
 function container_exists {
-   # exit code of docker inspect says if it's running.
-   docker inspect --format="{{ .State.Running }}" "$1" >/dev/null 2>&1
+   [ $# -eq 1 ] || die "container_exists requires containername parameter."
+   # exit code of docker inspect says if it's running. Don't let the line fail though (in case we have set -e)
+   docker inspect --format="{{ .State.Running }}" "$1" >/dev/null 2>&1 || return 1
 }
 
 #------------------------------------------------------------------------------------
 # See if a container is running
 
 function container_running {
-   container_exists "$1" || return 1
-   $(docker inspect --format="{{ .State.Running }}" "$1" 2>/dev/null) || return 1
-   [ "${RUNNING}" = "true" ]
+   [ $# -eq 1 ] || die "container_running requires containername parameter."
+   container_exists "$1" && [ $(docker inspect --format="{{ .State.Running }}" "$1" 2>/dev/null) = "true" ]
 }
 
 #------------------------------------------------------------------------------------
 # See if a container is paused
 
 function container_paused {
-   container_exists "$1" || return 1
-   local PAUSED=$(docker inspect --format="{{ .State.Paused }}" "$1" 2>/dev/null)
-   [ "${PAUSED}" = "true" ]
+   [ $# -eq 1 ] || die "container_paused requires containername parameter."
+   container_exists "$1" && [ $(docker inspect --format="{{ .State.Paused }}" "$1" 2>/dev/null) = "true" ]
 }
 
 #------------------------------------------------------------------------------------
