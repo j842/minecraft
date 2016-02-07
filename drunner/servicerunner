@@ -46,6 +46,9 @@ SYNOPSIS
    ${SERVICENAME} stop            - Stop it
    ${SERVICENAME} status          - Is it running?
    
+   ${SERVICENAME} export PATH     - export world and config to PATH
+   ${SERVICENAME} import PATH     - import world and config from PATH
+   
 DESCRIPTION
    Built from ${IMAGENAME}.
    
@@ -118,8 +121,8 @@ function getHostIP {
 # Display the status of hte service.
 
 function showStatus {
-   container_exists "${SERVICENAME}-start"  || { echo "${SERVICENAME}'s container does not exist." ; exit 0 ; }
-   container_running "${SERVICENAME}-start" || { echo "${SERVICENAME}'s container is stopped." ; exit 0 ; }
+   container_exists "${SERVICENAME}-start"  || { echo "${SERVICENAME}'s container is stopped and removed." ; exit 0 ; }
+   container_running "${SERVICENAME}-start" || { echo "${SERVICENAME}'s container is stopped but not removed." ; exit 0 ; }
    getPort
    getHostIP
    echo "Minecraft is running on ${HOSTIP}:${PORT}"   
@@ -132,6 +135,7 @@ function main {
    [ "$#" -gt 0 ] || die "servicerunner must have the install argument."
 
    COMMAND="${1}" ; shift
+   COMMANDOPTS=("-i")
    
    case "$COMMAND" in 
          install)
@@ -162,6 +166,7 @@ function main {
             ;;
          
          enter)
+            COMMANDOPTS=("-it")
             dockerrun /bin/bash "$@"
             ;;
          
@@ -184,20 +189,43 @@ function main {
             [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
             PORT="$1"
             
-            COMMANDOPTS=("-i")
             dockerrun bash -c "echo -n $PORT > /config/port && echo eula=true > /data/eula.txt"
             ;;
 
          stop)
             # check if running, if so stop it.
-            ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-rstartun" >/dev/null 2>&1
+            ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-start" >/dev/null 2>&1
             ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
+            echo "New Status:"
             showStatus   
             ;;
          
          status)
             showStatus
             ;;
+            
+         import)
+            [ "$#" -eq 1 ] || die "Import requires one argument (the path to of the world to be imported)."
+            [ -d "$1" ] || die "Path does not exist: $1"
+            ! container_running "${SERVICENAME}-start" || die "Can't import while ${SERVICENAME} is started. Stop it first."
+            
+            dockerrun bash -c "rm -r /data/*"
+            tar cf - -C "$1" . | docker run -i --name="${SERVICENAME}-${COMMAND}" "${DOCKEROPTS[@]}" "${IMAGENAME}" tar -xv -C /data
+            RVAL=$?
+            docker rm "${SERVICENAME}-${COMMAND}" >/dev/null
+            [ $RVAL -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed to transfer the files."
+            ;;
+            
+         export)
+            [ "$#" -eq 1 ] || die "Export requires one argument (the path to export the world to)."
+            [ -d "$1" ] || die "Please create the path first, e.g. ${CODE_S}mkdir -p ${1}${CODE_E}"
+            ! container_running "${SERVICENAME}-start" || die "Can't export while ${SERVICENAME} is started. Stop it first with ${CODE_S}${SERVICENAME} stop${CODE_E}"
+            
+            docker run -i --name="${SERVICENAME}-${COMMAND}" "${DOCKEROPTS[@]}" "${IMAGENAME}" tar cf - -C "/data" . | tar -xv -C "$1" 
+            RVAL=$?
+            docker rm "${SERVICENAME}-${COMMAND}" >/dev/null
+            [ $RVAL -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed to transfer the files."
+            ;;            
             
          *)
             showhelp
