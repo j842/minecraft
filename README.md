@@ -1,10 +1,19 @@
-# dr-minecraft
+# drunner-minecraft
+
+A simple dRunner compatible Minecraft container. Based on Kitematic/Minecraft.
+
+Pauses server on backup/restore. All data and configuration in backup. Can run multiple servers on
+a host just by using different ports. :-)
+
+## Use
 
 ```
-dr minecraft install j842/dr-minecraft
+drunner install drunner/minecraft
 minecraft configure 25565
-minecraft run
+minecraft start
 ```
+
+## Help
 
 ```
 NAME
@@ -13,7 +22,9 @@ NAME
 SYNOPSIS
    ${SERVICENAME} help            - This help
    ${SERVICENAME} configure PORT  - Configure for port PORT
-   ${SERVICENAME} run             - Make it go!
+   ${SERVICENAME} start           - Make it go!
+   ${SERVICENAME} stop            - Stop it
+   ${SERVICENAME} status          - Is it running?
    
 DESCRIPTION
    Built from ${IMAGENAME}.
