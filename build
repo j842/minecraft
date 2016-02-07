@@ -1,3 +1,21 @@
 #!/bin/bash
-docker build -t j842/dr-minecraft .
 
+IMAGENAME="drunner/minecraft"
+
+
+#------------------------------------------------
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$BRANCH" = "master" ]; then
+  TAG=""
+else
+  TAG=":${BRANCH}"
+fi
+
+TARGET="${IMAGENAME}${TAG}"
+
+docker build -t "$TARGET" .
+
+echo " "
+echo "Built $TARGET"

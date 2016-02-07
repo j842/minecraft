@@ -1,0 +1,139 @@
+#!/bin/bash
+                                                                                                                                                          
+#  ad88888ba                                        88                          88888888ba                                                                  
+# d8"     "8b                                       ""                          88      "8b                                                                 
+# Y8,                                                                           88      ,8P                                                                 
+# `Y8aaaaa,     ,adPPYba,  8b,dPPYba,  8b       d8  88   ,adPPYba,   ,adPPYba,  88aaaaaa8P'  88       88  8b,dPPYba,   8b,dPPYba,    ,adPPYba,  8b,dPPYba,  
+#   `"""""8b,  a8P_____88  88P'   "Y8  `8b     d8'  88  a8"     ""  a8P_____88  88""""88'    88       88  88P'   `"8a  88P'   `"8a  a8P_____88  88P'   "Y8  
+#         `8b  8PP"""""""  88           `8b   d8'   88  8b          8PP"""""""  88    `8b    88       88  88       88  88       88  8PP"""""""  88          
+# Y8a     a8P  "8b,   ,aa  88            `8b,d8'    88  "8a,   ,aa  "8b,   ,aa  88     `8b   "8a,   ,a88  88       88  88       88  "8b,   ,aa  88          
+#  "Y88888P"    `"Ybbd8"'  88              "8"      88   `"Ybbd8"'   `"Ybbd8"'  88      `8b   `"YbbdP'Y8  88       88  88       88   `"Ybbd8"'  88          
+
+
+
+#------------------------------------------------------------------------------------
+# Initialisation of globals.
+
+set -o nounset
+MYDIR=$( dirname "$(readlink -f "$0")" )
+source "$MYDIR/_variables"
+e=$(printf "\e") 
+readonly CODE_S="$e[32m"
+readonly CODE_E="$e[0m"
+
+#------------------------------------------------------------------------------------
+# die MSG - show the message (red) and exit 1.
+
+function die { 
+   echo " ">&2 ; echo -e "\e[31m\e[1m${1}\e[0m">&2  ; echo " ">&2
+   exit 1 
+}
+
+#------------------------------------------------------------------------------------
+# showhelp - give some info about the service. SERVICENAME and IMAGENAME are provided by _variables.
+
+function showhelp {
+cat <<EOF >&2
+
+NAME
+   ${SERVICENAME} - Runs minecraft
+       
+SYNOPSIS
+   ${SERVICENAME} help            - This help
+   ${SERVICENAME} configure PORT  - Configure for port PORT
+   ${SERVICENAME} run             - Make it go!
+   
+DESCRIPTION
+   Built from ${IMAGENAME}.
+   
+EOF
+}
+
+#------------------------------------------------------------------------------------
+# Run a command in the container. 
+
+function dockerrun {
+   docker run -i -t --name="${SERVICENAME}-${COMMAND}" -h "${HOSTNAME}" "${DOCKEROPTS[@]}" "${IMAGENAME}" "$@"
+   local RVAL=$?
+   docker rm "${SERVICENAME}-${COMMAND}" >/dev/null
+   if [ $RVAL -ne 0 ]; then die "${SERVICENAME} ${COMMAND} failed." ; fi
+}
+
+#------------------------------------------------------------------------------------
+# The main function. We can add any commands we'd like here!
+
+function main {
+   if [ "$#" -eq 0 ]; then 
+      die "servicerunner must have the install argument."
+   fi
+
+   COMMAND="${1}" ; shift
+   
+   case "$COMMAND" in 
+         install)
+            ;;
+            
+         destroy)
+            ;;
+                     
+         backup)
+            BACKUPPATH="$1"
+            ;;
+         
+         restore)
+            RESTOREPATH="$1"
+            ;;
+         
+         help)
+            showhelp
+            ;;
+         
+         enter)
+            dockerrun /bin/bash "$@"
+            ;;
+         
+         update)
+            ;;
+
+         start)
+            PORT=$(docker run -i --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "cat /config/port")
+            [ -n "$PORT" ] || die "Run configure first!"
+            RVAL=$?
+            docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+            [ "$RVAL" -eq 0 ] || die "Failed to get port. Please run configure first."
+            # Run the service. Can't use --rm as we don't want volumes cleared.
+            # DOCKEROPTS, SERVICENAME AND IMAGENAME are set by _variables.
+            docker run -d=true --name="${SERVICENAME}-run" -h "${HOSTNAME}"              \
+                           ${DOCKEROPTS[@]}  -p="${PORT}:25565" -p="${PORT}:25565/udp"   \
+                           ${IMAGENAME} java -jar /minecraft_server.1.8.7.jar                          
+            RVAL=$?
+            [ "$RVAL" -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
+            ;;
+         
+         configure)
+            if [ "$#" -ne 1 ]; then showhelp ; die "You need to specify the PORT."; fi
+            PORT="$1"
+
+            docker run -i --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "echo -n $PORT > /config/port && echo eula=true > /data/eula.txt"
+            RVAL=$?
+            docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+            [ "$RVAL" -eq 0 ] || die "Failed to configure minecraft on port $PORT :("
+            ;;
+
+         stop)
+            # check if running, if so stop it.
+            ;;
+         
+         sadffsda)
+            ;;
+            
+         *)
+            showhelp
+            die "Unrecognised command ${CODE_S}${COMMAND}${CODE_E}"            
+            ;;
+   esac
+}
+
+#------------------------------------------------------------------------------------
+
+main "$@"
