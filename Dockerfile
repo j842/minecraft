@@ -12,8 +12,8 @@ RUN adduser druser sudo
 
 # TODO: Lock down sudoers so we can only run a start up script!
 
-# add in the assets.
-ADD ["./drunner","/drunner"]
+# copy in the assets.
+COPY ["./drunner","/drunner"]
 #ADD ["./usrlocalbin","/usr/local/bin"]
 RUN chmod a+rx -R /usr/local/bin  &&  chmod a-w -R /drunner && chmod a+r /minecraft*
 
