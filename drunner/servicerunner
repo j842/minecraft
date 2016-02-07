@@ -85,7 +85,7 @@ function container_running {
 # Get the port from the configuration file.
 
 function getPort {
-   PORT=$(docker run -i --name="${SERVICENAME}-getport" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "cat /config/port")
+   PORT=$(docker run -i --name="${SERVICENAME}-getport" "${DOCKEROPTS[@]}" "${IMAGENAME}" bash -c "cat /config/port")
    RVAL=$?
    docker rm "${SERVICENAME}-getport" >/dev/null 2>&1
    [ "$RVAL" -eq 0 ] || die "Failed to get port. Please run configure first."
@@ -161,19 +161,19 @@ function main {
             STARTED=1
             container_running "${SERVICENAME}-run" && STARTED=0 && docker pause "${SERVICENAME}-run"
             COMMANDOPTS=("-i" "-v" "${BACKUPPATH}:/backups")
-            dockerrun bash -c 'tar zcf /backups/databackup.tgz /data'
+            dockerrun bash -c "tar zcf /backups/databackup.tgz /data"
             [ -e "${BACKUPPATH}/databackup.tgz" ] || die "Failed to create cold backup of minecraft data volume."
-            [ STARTED -eq 1 ] || docker unpause "${SERVICENAME}-run" 
+            [ "$STARTED" -eq 1 ] || docker unpause "${SERVICENAME}-run" 
             ;;
          
          restore)
             # cold restore.
             RESTOREPATH="$1"
             ! container_running "${SERVICENAME}-run" || die "Can't restore into a running container!"
-            [ -e "${RESTOREPATH}/databackup.tgz" ] || { ls "${RESTOREPATH}" ; die "Restore path does not contain the data volume backup." }
+            [ -e "${RESTOREPATH}/databackup.tgz" ] || { ls "${RESTOREPATH}" ; die "Restore path does not contain the data volume backup." ; }
             COMMANDOPTS=("-i" "-v" "${RESTOREPATH}:/backups")
             # could compare hot + paused backups if we wanted here. We just throw away the hot one.
-            dockerrun bash -c 'rm -r /data/* && tar zxf /backups/databackup.tgz'
+            dockerrun bash -c "rm -r /data/* && tar zxf /backups/databackup.tgz"
             ;;
          
          help)
