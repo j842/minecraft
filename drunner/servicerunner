@@ -81,13 +81,21 @@ function getPort {
 }
 
 #------------------------------------------------------------------------------------
-# Display the status of hte service.
+# Display the status of the service.
 
 function showStatus {
    container_exists "${SERVICENAME}-start"  || { echo "${SERVICENAME}'s container is stopped and removed." ; exit 0 ; }
    container_running "${SERVICENAME}-start" || { echo "${SERVICENAME}'s container is stopped but not removed." ; exit 0 ; }
    getPort
    echo "Minecraft is running on ${HOSTIP}:${PORT}"   
+}
+
+#------------------------------------------------------------------------------------
+# check if running, if so stop it.
+
+function stopService {
+   ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-start" >/dev/null 2>&1
+   ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
 }
 
 #------------------------------------------------------------------------------------
@@ -104,6 +112,7 @@ function main {
             ;;
             
          destroy)
+            stopService
             ;;
                      
          backupstart)
@@ -120,7 +129,9 @@ function main {
             ;;
          
          restore)
+            # restore only ever called into empty service
             #RESTOREPATH="$1"
+            ! container_running "${SERVICENAME}-start" || die "${SERVICENAME} is running while restoring! This should never happen as restore should only work to an empty service."
             ;;
          
          help)
@@ -133,6 +144,7 @@ function main {
             ;;
          
          update)
+            ! container_running "${SERVICENAME}-start" || echo "${SERVICENAME} is running while we update. You may wish to stop then start after update to pick up changes."
             ;;
 
          start)
@@ -155,9 +167,7 @@ function main {
             ;;
 
          stop)
-            # check if running, if so stop it.
-            ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-start" >/dev/null 2>&1
-            ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
+            stopService
             echo "New Status:"
             showStatus   
             ;;
