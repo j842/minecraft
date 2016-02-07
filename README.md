@@ -26,6 +26,9 @@ SYNOPSIS
    ${SERVICENAME} stop            - Stop it
    ${SERVICENAME} status          - Is it running?
    
+   ${SERVICENAME} export PATH     - export world and config to PATH
+   ${SERVICENAME} import PATH     - import world and config from PATH
+   
 DESCRIPTION
-   Built from ${IMAGENAME}.
+   Built from ${IMAGENAME}.   
 ```
