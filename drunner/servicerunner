@@ -22,11 +22,12 @@ readonly CODE_S="$e[32m"
 readonly CODE_E="$e[0m"
 
 #------------------------------------------------------------------------------------
-# die MSG - show the message (red) and exit 1.
+# die MSG [EXITCODE] - show the message (red) and exit exitcode.
 
 function die { 
    echo " ">&2 ; echo -e "\e[31m\e[1m${1}\e[0m">&2  ; echo " ">&2
-   exit 1 
+   EXITCODE=${2:-1}
+   exit "$EXITCODE"
 }
 
 #------------------------------------------------------------------------------------
@@ -41,7 +42,9 @@ NAME
 SYNOPSIS
    ${SERVICENAME} help            - This help
    ${SERVICENAME} configure PORT  - Configure for port PORT
-   ${SERVICENAME} run             - Make it go!
+   ${SERVICENAME} start           - Make it go!
+   ${SERVICENAME} stop            - Stop it
+   ${SERVICENAME} status          - Is it running?
    
 DESCRIPTION
    Built from ${IMAGENAME}.
@@ -60,12 +63,45 @@ function dockerrun {
 }
 
 #------------------------------------------------------------------------------------
+# See if a container is running
+# https://gist.github.com/ekristen/11254304
+
+function container_exists {
+   # exit code of docker inspect says if it's running.
+   docker inspect --format="{{ .State.Running }}" "$1" >/dev/null 2>&1
+}
+function container_running {
+   container_exists "$1" || return 1
+   local RUNNING=$(docker inspect --format="{{ .State.Running }}" "$1" 2>/dev/null)
+   [ "${RUNNING}" = "true" ]
+}
+
+function getPort {
+   PORT=$(docker run -i --name="${SERVICENAME}-getport" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "cat /config/port")
+   RVAL=$?
+   docker rm "${SERVICENAME}-getport" >/dev/null 2>&1
+   [ "$RVAL" -eq 0 ] || die "Failed to get port. Please run configure first."
+   [ -n "$PORT" ] || die "Run configure first!"
+}
+
+function getHostIP {
+   # http://stackoverflow.com/a/25851186
+   HOSTIP=$(ip route get 1 | awk '{print $NF;exit}')
+}
+
+function showStatus {
+   container_exists "${SERVICENAME}-run"  || { echo "${SERVICENAME}'s container does not exist." ; exit 0 ; }
+   container_running "${SERVICENAME}-run" || { echo "${SERVICENAME}'s container is stopped." ; exit 0 ; }
+   getPort
+   getHostIP
+   echo "Minecraft is running on ${HOSTIP}:${PORT}"   
+}
+
+#------------------------------------------------------------------------------------
 # The main function. We can add any commands we'd like here!
 
 function main {
-   if [ "$#" -eq 0 ]; then 
-      die "servicerunner must have the install argument."
-   fi
+   [ "$#" -gt 0 ] || die "servicerunner must have the install argument."
 
    COMMAND="${1}" ; shift
    
@@ -96,35 +132,40 @@ function main {
             ;;
 
          start)
-            PORT=$(docker run -i --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "cat /config/port")
-            [ -n "$PORT" ] || die "Run configure first!"
-            RVAL=$?
-            docker rm "${SERVICENAME}-run" >/dev/null 2>&1
-            [ "$RVAL" -eq 0 ] || die "Failed to get port. Please run configure first."
-            # Run the service. Can't use --rm as we don't want volumes cleared.
+            ! container_running "${SERVICENAME}-run" || die "Already running" 3 
+            ! container_exists "${SERVICENAME}-run"  || docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+
+            getPort
+
+            # Run the service. 
             # DOCKEROPTS, SERVICENAME AND IMAGENAME are set by _variables.
             docker run -d=true --name="${SERVICENAME}-run" -h "${HOSTNAME}"              \
                            ${DOCKEROPTS[@]}  -p="${PORT}:25565" -p="${PORT}:25565/udp"   \
                            ${IMAGENAME} java -jar /minecraft_server.1.8.7.jar                          
-            RVAL=$?
-            [ "$RVAL" -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
+            [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
+            showStatus
             ;;
          
          configure)
-            if [ "$#" -ne 1 ]; then showhelp ; die "You need to specify the PORT."; fi
+            ! container_running "${SERVICENAME}-run" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
+            [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
             PORT="$1"
 
-            docker run -i --name="${SERVICENAME}-run" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "echo -n $PORT > /config/port && echo eula=true > /data/eula.txt"
+            docker run -i --name="${SERVICENAME}-configure" ${DOCKEROPTS[@]} ${IMAGENAME} bash -c "echo -n $PORT > /config/port && echo eula=true > /data/eula.txt"
             RVAL=$?
-            docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+            docker rm "${SERVICENAME}-configure" >/dev/null 2>&1
             [ "$RVAL" -eq 0 ] || die "Failed to configure minecraft on port $PORT :("
             ;;
 
          stop)
             # check if running, if so stop it.
+            ! container_running "${SERVICENAME}-run" || docker stop --time=30 "${SERVICENAME}-run" >/dev/null 2>&1
+            ! container_exists "${SERVICENAME}-run"  || docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+            showStatus
             ;;
          
-         sadffsda)
+         status)
+            showStatus
             ;;
             
          *)
