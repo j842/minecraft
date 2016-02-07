@@ -88,6 +88,15 @@ function container_running {
 }
 
 #------------------------------------------------------------------------------------
+# See if a container is paused
+
+function container_paused {
+   container_exists "$1" || return 1
+   local PAUSED=$(docker inspect --format="{{ .State.Paused }}" "$1" 2>/dev/null)
+   [ "${PAUSED}" = "true" ]
+}
+
+#------------------------------------------------------------------------------------
 # Get the port from the configuration file.
 
 function getPort {
@@ -117,32 +126,6 @@ function showStatus {
 }
 
 #------------------------------------------------------------------------------------
-# Stop the service if it's running. TODO: Exit 3 on no change.
-
-function stop {
-   ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-rstartun" >/dev/null 2>&1
-   ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
-   showStatus   
-}
-
-#------------------------------------------------------------------------------------
-# Start the service if it's not running. Exits 3 on no change.
-
-function start {
-   ! container_running "${SERVICENAME}-start" || die "Already running" 3 
-   ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
-
-   getPort
-
-   # Run the service. 
-   # DOCKEROPTS, SERVICENAME AND IMAGENAME are set by _variables.
-   COMMANDOPTS=("-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
-   dockerrund java -jar /minecraft_server.1.8.7.jar                          
-   [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
-   showStatus
-}
-
-#------------------------------------------------------------------------------------
 # The main function. We can add any commands we'd like here!
 
 function main {
@@ -157,29 +140,21 @@ function main {
          destroy)
             ;;
                      
-         backup)
-            # data volume is automatically hot backed up. We are paranoid here, taking a paused
-            # backup as well. Probably don't need this for minecraft, but good as an example.
-            # This does mean the backup set contains both hot + paused backups, doubling the data
-            # size. Could avoid this by managing the data container ourselves (not listing it in
-            # service.cfg), but minecraft data is small so we don't care.
-            BACKUPPATH="$1"
-            STARTED=1
-            container_running "${SERVICENAME}-start" && STARTED=0 && docker pause "${SERVICENAME}-start"
-            COMMANDOPTS=("-i" "-v" "${BACKUPPATH}:/backups")
-            dockerrun bash -c "tar zcf /backups/databackup.tgz /data"
-            [ -e "${BACKUPPATH}/databackup.tgz" ] || die "Failed to create cold backup of minecraft data volume."
-            [ "$STARTED" -eq 1 ] || docker unpause "${SERVICENAME}-start" 
+         backupstart)
+            # data volume is automatically backed up, we just need to pause the service so it's
+            # warm not hot!
+            #BACKUPPATH="$1"
+            ! container_running "${SERVICENAME}-start" || docker pause "${SERVICENAME}-start"
+            ;;
+
+         backupend)
+            # resume if paused.
+            #BACKUPPATH="$1"
+            ! container_paused "${SERVICENAME}-start" || docker unpause "${SERVICENAME}-start" 
             ;;
          
          restore)
-            # cold restore.
-            RESTOREPATH="$1"
-            ! container_running "${SERVICENAME}-start" || die "Can't restore into a running container!"
-            [ -e "${RESTOREPATH}/databackup.tgz" ] || { ls "${RESTOREPATH}" ; die "Restore path does not contain the data volume backup." ; }
-            COMMANDOPTS=("-i" "-v" "${RESTOREPATH}:/backups")
-            # could compare hot + paused backups if we wanted here. We just throw away the hot one.
-            dockerrun bash -c "rm -r /data/* && cd / && tar zxf /backups/databackup.tgz"
+            #RESTOREPATH="$1"
             ;;
          
          help)
@@ -194,7 +169,14 @@ function main {
             ;;
 
          start)
-            start
+            ! container_running "${SERVICENAME}-start" || die "Already running" 3 
+            ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
+
+            getPort
+            COMMANDOPTS=("-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
+            dockerrund java -jar /minecraft_server.1.8.7.jar                          
+            [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
+            showStatus
             ;;
          
          configure)
@@ -208,7 +190,9 @@ function main {
 
          stop)
             # check if running, if so stop it.
-            stop
+            ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-rstartun" >/dev/null 2>&1
+            ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
+            showStatus   
             ;;
          
          status)
