@@ -63,6 +63,12 @@ function dockerrun {
    [ $RVAL -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
 }
 
+# detached, can't remove.
+function dockerrund {
+   docker run -d "${COMMANDOPTS[@]}" --name="${SERVICENAME}-${COMMAND}" -h "${HOSTNAME}" "${DOCKEROPTS[@]}" "${IMAGENAME}" "$@"
+   [ $? -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
+}
+
 #------------------------------------------------------------------------------------
 # See if a container is exists. Return value of docker inspect is correct (0 if running)
 # https://gist.github.com/ekristen/11254304
@@ -103,8 +109,8 @@ function getHostIP {
 # Display the status of hte service.
 
 function showStatus {
-   container_exists "${SERVICENAME}-run"  || { echo "${SERVICENAME}'s container does not exist." ; exit 0 ; }
-   container_running "${SERVICENAME}-run" || { echo "${SERVICENAME}'s container is stopped." ; exit 0 ; }
+   container_exists "${SERVICENAME}-start"  || { echo "${SERVICENAME}'s container does not exist." ; exit 0 ; }
+   container_running "${SERVICENAME}-start" || { echo "${SERVICENAME}'s container is stopped." ; exit 0 ; }
    getPort
    getHostIP
    echo "Minecraft is running on ${HOSTIP}:${PORT}"   
@@ -114,8 +120,8 @@ function showStatus {
 # Stop the service if it's running. TODO: Exit 3 on no change.
 
 function stop {
-   ! container_running "${SERVICENAME}-run" || docker stop --time=30 "${SERVICENAME}-run" >/dev/null 2>&1
-   ! container_exists "${SERVICENAME}-run"  || docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+   ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-rstartun" >/dev/null 2>&1
+   ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
    showStatus   
 }
 
@@ -123,15 +129,15 @@ function stop {
 # Start the service if it's not running. Exits 3 on no change.
 
 function start {
-   ! container_running "${SERVICENAME}-run" || die "Already running" 3 
-   ! container_exists "${SERVICENAME}-run"  || docker rm "${SERVICENAME}-run" >/dev/null 2>&1
+   ! container_running "${SERVICENAME}-start" || die "Already running" 3 
+   ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
 
    getPort
 
    # Run the service. 
    # DOCKEROPTS, SERVICENAME AND IMAGENAME are set by _variables.
-   COMMANDOPTS=("-d" "-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
-   dockerrun java -jar /minecraft_server.1.8.7.jar                          
+   COMMANDOPTS=("-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
+   dockerrund java -jar /minecraft_server.1.8.7.jar                          
    [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
    showStatus
 }
@@ -159,21 +165,21 @@ function main {
             # service.cfg), but minecraft data is small so we don't care.
             BACKUPPATH="$1"
             STARTED=1
-            container_running "${SERVICENAME}-run" && STARTED=0 && docker pause "${SERVICENAME}-run"
+            container_running "${SERVICENAME}-start" && STARTED=0 && docker pause "${SERVICENAME}-start"
             COMMANDOPTS=("-i" "-v" "${BACKUPPATH}:/backups")
             dockerrun bash -c "tar zcf /backups/databackup.tgz /data"
             [ -e "${BACKUPPATH}/databackup.tgz" ] || die "Failed to create cold backup of minecraft data volume."
-            [ "$STARTED" -eq 1 ] || docker unpause "${SERVICENAME}-run" 
+            [ "$STARTED" -eq 1 ] || docker unpause "${SERVICENAME}-start" 
             ;;
          
          restore)
             # cold restore.
             RESTOREPATH="$1"
-            ! container_running "${SERVICENAME}-run" || die "Can't restore into a running container!"
+            ! container_running "${SERVICENAME}-start" || die "Can't restore into a running container!"
             [ -e "${RESTOREPATH}/databackup.tgz" ] || { ls "${RESTOREPATH}" ; die "Restore path does not contain the data volume backup." ; }
             COMMANDOPTS=("-i" "-v" "${RESTOREPATH}:/backups")
             # could compare hot + paused backups if we wanted here. We just throw away the hot one.
-            dockerrun bash -c "rm -r /data/* && tar zxf /backups/databackup.tgz"
+            dockerrun bash -c "rm -r /data/* && cd / && tar zxf /backups/databackup.tgz"
             ;;
          
          help)
@@ -192,7 +198,7 @@ function main {
             ;;
          
          configure)
-            ! container_running "${SERVICENAME}-run" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
+            ! container_running "${SERVICENAME}-start" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
             [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
             PORT="$1"
             
