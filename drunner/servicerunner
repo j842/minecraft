@@ -117,11 +117,15 @@ function main {
    case "$COMMAND" in 
          install)
             ;;
-            
-         destroy)
+
+         obliterate)
             stopService
             ;;
                      
+         uninstall)
+            stopService
+            ;;
+               
          backupstart)
             # data volume is automatically backed up, we just need to pause the service so it's
             # warm not hot!
