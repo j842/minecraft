@@ -1,13 +1,13 @@
 #!/bin/bash
-                                                                                                                                                          
-#  ad88888ba                                        88                          88888888ba                                                                  
-# d8"     "8b                                       ""                          88      "8b                                                                 
-# Y8,                                                                           88      ,8P                                                                 
-# `Y8aaaaa,     ,adPPYba,  8b,dPPYba,  8b       d8  88   ,adPPYba,   ,adPPYba,  88aaaaaa8P'  88       88  8b,dPPYba,   8b,dPPYba,    ,adPPYba,  8b,dPPYba,  
-#   `"""""8b,  a8P_____88  88P'   "Y8  `8b     d8'  88  a8"     ""  a8P_____88  88""""88'    88       88  88P'   `"8a  88P'   `"8a  a8P_____88  88P'   "Y8  
-#         `8b  8PP"""""""  88           `8b   d8'   88  8b          8PP"""""""  88    `8b    88       88  88       88  88       88  8PP"""""""  88          
-# Y8a     a8P  "8b,   ,aa  88            `8b,d8'    88  "8a,   ,aa  "8b,   ,aa  88     `8b   "8a,   ,a88  88       88  88       88  "8b,   ,aa  88          
-#  "Y88888P"    `"Ybbd8"'  88              "8"      88   `"Ybbd8"'   `"Ybbd8"'  88      `8b   `"YbbdP'Y8  88       88  88       88   `"Ybbd8"'  88          
+
+#  ad88888ba                                        88                          88888888ba
+# d8"     "8b                                       ""                          88      "8b
+# Y8,                                                                           88      ,8P
+# `Y8aaaaa,     ,adPPYba,  8b,dPPYba,  8b       d8  88   ,adPPYba,   ,adPPYba,  88aaaaaa8P'  88       88  8b,dPPYba,   8b,dPPYba,    ,adPPYba,  8b,dPPYba,
+#   `"""""8b,  a8P_____88  88P'   "Y8  `8b     d8'  88  a8"     ""  a8P_____88  88""""88'    88       88  88P'   `"8a  88P'   `"8a  a8P_____88  88P'   "Y8
+#         `8b  8PP"""""""  88           `8b   d8'   88  8b          8PP"""""""  88    `8b    88       88  88       88  88       88  8PP"""""""  88
+# Y8a     a8P  "8b,   ,aa  88            `8b,d8'    88  "8a,   ,aa  "8b,   ,aa  88     `8b   "8a,   ,a88  88       88  88       88  "8b,   ,aa  88
+#  "Y88888P"    `"Ybbd8"'  88              "8"      88   `"Ybbd8"'   `"Ybbd8"'  88      `8b   `"YbbdP'Y8  88       88  88       88   `"Ybbd8"'  88
 
 
 
@@ -33,25 +33,25 @@ cat <<EOF >&2
 
 NAME
    ${SERVICENAME} - Runs minecraft
-       
+
 SYNOPSIS
    ${SERVICENAME} help            - This help
    ${SERVICENAME} configure PORT  - Configure for port PORT
    ${SERVICENAME} start           - Make it go!
    ${SERVICENAME} stop            - Stop it
-   ${SERVICENAME} status          - Is it running?
-   
+   ${SERVICENAME} info            - Is it running?
+
    ${SERVICENAME} export PATH     - export world and config to PATH
    ${SERVICENAME} import PATH     - import world and config from PATH
-   
+
 DESCRIPTION
    Built from ${IMAGENAME}.
-   
+
 EOF
 }
 
 #------------------------------------------------------------------------------------
-# Run a command in the container. 
+# Run a command in the container.
 
 function dockerrun {
    local RVAL=0
@@ -62,7 +62,7 @@ function dockerrun {
 }
 
 #------------------------------------------------------------------------------------
-# Run a detached command in the container. 
+# Run a detached command in the container.
 
 # detached, can't remove.
 function dockerrund {
@@ -89,7 +89,7 @@ function showStatus {
    container_exists "${SERVICENAME}-start"  || { echo "${SERVICENAME}'s container is stopped and removed." ; exit 0 ; }
    container_running "${SERVICENAME}-start" || { echo "${SERVICENAME}'s container is stopped but not removed." ; exit 0 ; }
    getPort
-   echo "Minecraft is running on ${HOSTIP}:${PORT}"   
+   echo "Minecraft is running on ${HOSTIP}:${PORT}"
 }
 
 #------------------------------------------------------------------------------------
@@ -108,96 +108,93 @@ function main {
 
    COMMAND="${1}" ; shift
    COMMANDOPTS=("-i")
-   
-   case "$COMMAND" in 
+
+   case "$COMMAND" in
          install)
             ;;
 
-         obliterate)
+         obliterate_start)
             stopService
             ;;
-                     
-         uninstall)
+
+         uninstall_start)
             stopService
             ;;
-               
-         backupstart)
+
+         backup_start)
             # data volume is automatically backed up, we just need to pause the service so it's
             # warm not hot!
             #BACKUPPATH="$1"
             ! container_running "${SERVICENAME}-start" || docker pause "${SERVICENAME}-start"
             ;;
 
-         backupend)
+         backup_end)
             # resume if paused.
             #BACKUPPATH="$1"
-            ! container_paused "${SERVICENAME}-start" || docker unpause "${SERVICENAME}-start" 
+            ! container_paused "${SERVICENAME}-start" || docker unpause "${SERVICENAME}-start"
             ;;
-         
-         restore)
+
+         restore_end)
             # restore only ever called into empty service
             #RESTOREPATH="$1"
             ! container_running "${SERVICENAME}-start" || die "${SERVICENAME} is running while restoring! This should never happen as restore should only work to an empty service."
             ;;
-         
+
          help)
             showhelp
             ;;
-         
+
          enter)
             COMMANDOPTS=("-it")
             dockerrun /bin/bash "$@"
             ;;
-         
-         updatestart)
+
+         update_start)
             ! container_running "${SERVICENAME}-start" || echo "${SERVICENAME} is running while we update. You may wish to stop then start after update to pick up changes."
             ;;
 
-         updateend)
-            ;;
-         
          selftest)
             ;;
-            
+
          start)
-            ! container_running "${SERVICENAME}-start" || die "Already running" 3 
+            ! container_running "${SERVICENAME}-start" || die "Already running" 3
             ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
 
             getPort
             COMMANDOPTS=("-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
-            dockerrund java -jar /minecraft_server.1.8.7.jar                          
+            dockerrund java -jar /minecraft_server.1.8.7.jar
             [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
             showStatus
             ;;
-         
+
          configure)
             ! container_running "${SERVICENAME}-start" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
             [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
             PORT="$1"
-            
+
             dockerrun bash -c "echo -n $PORT > /config/port && echo eula=true > /data/eula.txt"
             ;;
 
          stop)
             stopService
             echo "New Status:"
-            showStatus   
-            ;;
-         
-         status)
             showStatus
             ;;
-            
+
+         info)
+            showStatus
+            ;;
+
          import)
             [ "$#" -eq 1 ] || die "Import requires one argument (the path to of the world to be imported)."
             local SOURCEPATH=$(realpath "$1" | tr -d '\r\n')
             [ -d "$SOURCEPATH" ] || die "Path does not exist: $SOURCEPATH"
             ! container_running "${SERVICENAME}-start" || die "Can't import while ${SERVICENAME} is started. Stop it first."
-            
+
             utils_import "$SOURCEPATH" "/data"
             echo "Imported minecraft world from $SOURCEPATH."
             ;;
-            
+
          export)
             [ "$#" -eq 1 ] || die "Export requires one argument (the path to export the world to)."
             local DESTPATH=$(realpath "$1" | tr -d '\r\n')
@@ -206,11 +203,16 @@ function main {
 
             utils_export "/data" "$DESTPATH"
             echo "Imported minecraft world to $DESTPATH."
-            ;;            
-            
+            ;;
+
          *)
+            # For the standard hooks we don't implement we're required to produce
+            # no output and set exit code 127 (E_NOTIMPL).
+            ! isHook ${COMMAND} || exit 127
+
+            # for all other commands we show the help.
             showhelp
-            die "Unrecognised command ${CODE_S}${COMMAND}${CODE_E}"            
+            die "Unrecognised command ${CODE_S}${COMMAND}${CODE_E}"
             ;;
    esac
 }
@@ -218,3 +220,4 @@ function main {
 #------------------------------------------------------------------------------------
 
 main "$@"
+exit 0

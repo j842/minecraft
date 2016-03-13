@@ -4,13 +4,13 @@ FROM kitematic/minecraft
 
 MAINTAINER j842
 
-RUN apt-get update && apt-get -y install sudo
+RUN apt-get update && apt-get -y install sudo apt-utils
 
 RUN groupadd -g 22922 drgroup
 RUN adduser --disabled-password --gecos '' -u 22922 --gid 22922 druser
-RUN adduser druser sudo
 
-# TODO: Lock down sudoers so we can only run a start up script!
+# allow sudo to run our scripts and my_init.
+#RUN echo "druser ALL= (ALL) NOPASSWD: /usr/local/bin/,/sbin/my_init" > /etc/sudoers.d/druser
 
 # copy in the assets.
 COPY ["./drunner","/drunner"]
@@ -22,4 +22,3 @@ USER druser
 
 # expose volume
 VOLUME /config /data
-

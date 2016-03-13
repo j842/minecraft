@@ -1,6 +1,8 @@
 #!/bin/bash
 # Service configuration.
 
+VERSION=2
+
 # Array for volume containers that are handled by dr.
 # These can be used in any Docker image that's part of this service.
 #
