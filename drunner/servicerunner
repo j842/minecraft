@@ -162,7 +162,7 @@ function main {
 
             getPort
             COMMANDOPTS=("-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
-            dockerrund java -jar /minecraft_server.1.8.7.jar
+            dockerrund runminecraft.sh
             [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
             showStatus
             ;;
@@ -172,7 +172,8 @@ function main {
             [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
             PORT="$1"
 
-            dockerrun bash -c "echo -n $PORT > /config/port && echo eula=true > /data/eula.txt"
+            dockerrun bash -c "echo -n $PORT > /config/port"
+
             ;;
 
          stop)
@@ -191,7 +192,7 @@ function main {
             [ -d "$SOURCEPATH" ] || die "Path does not exist: $SOURCEPATH"
             ! container_running "${SERVICENAME}-start" || die "Can't import while ${SERVICENAME} is started. Stop it first."
 
-            utils_import "$SOURCEPATH" "/data"
+            utils_import "$SOURCEPATH" "/minecraft/data"
             echo "Imported minecraft world from $SOURCEPATH."
             ;;
 
@@ -201,7 +202,7 @@ function main {
             [ -d "$DESTPATH" ] || die "Please create the path first, e.g. ${CODE_S}mkdir -p ${1}${CODE_E}"
             ! container_running "${SERVICENAME}-start" || die "Can't export while ${SERVICENAME} is started. Stop it first with ${CODE_S}${SERVICENAME} stop${CODE_E}"
 
-            utils_export "/data" "$DESTPATH"
+            utils_export "/minecraft/data" "$DESTPATH"
             echo "Imported minecraft world to $DESTPATH."
             ;;
 

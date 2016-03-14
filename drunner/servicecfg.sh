@@ -10,7 +10,7 @@ VERSION=2
 # e.g.
 # VOLUMES=("/config" "/data")
 
-VOLUMES=("/config" "/data")
+VOLUMES=("/config" "/minecraft/data")
 
 # Additional containers used by the service. Only set when we have
 # multiple containers (e.g. database container...)
