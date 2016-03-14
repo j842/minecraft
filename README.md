@@ -1,9 +1,11 @@
 # drunner-minecraft
 
-A simple dRunner compatible Minecraft container. Based on Kitematic/Minecraft.
+A simple dRunner compatible Minecraft container.
 
 Pauses server on backup/restore. All data and configuration in backup. Can run multiple servers on
 a host just by using different ports. :-)
+
+This is a version 2 dService, so requires the C++ version of dRunner.
 
 ## Use
 
@@ -24,7 +26,7 @@ SYNOPSIS
    ${SERVICENAME} configure PORT  - Configure for port PORT
    ${SERVICENAME} start           - Make it go!
    ${SERVICENAME} stop            - Stop it
-   ${SERVICENAME} status          - Is it running?
+   ${SERVICENAME} info            - Is it running?
    
    ${SERVICENAME} export PATH     - export world and config to PATH
    ${SERVICENAME} import PATH     - import world and config from PATH
