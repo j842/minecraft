@@ -1,24 +1,21 @@
 # A simple hello world example!
 
-FROM kitematic/minecraft
+FROM debian:wheezy
 
 MAINTAINER j842
 
-RUN apt-get update && apt-get -y install sudo apt-utils
+RUN apt-get update 
+RUN apt-get -y install openjdk-7-jre-headless wget
+RUN wget -q https://s3.amazonaws.com/Minecraft.Download/versions/1.8.7/minecraft_server.1.8.7.jar
 
 RUN groupadd -g 22922 drgroup
 RUN adduser --disabled-password --gecos '' -u 22922 --gid 22922 druser
 
-# allow sudo to run our scripts and my_init.
-#RUN echo "druser ALL= (ALL) NOPASSWD: /usr/local/bin/,/sbin/my_init" > /etc/sudoers.d/druser
-
 # copy in the assets.
 COPY ["./drunner","/drunner"]
-#ADD ["./usrlocalbin","/usr/local/bin"]
-RUN chmod a+rx -R /usr/local/bin  &&  chmod a-w -R /drunner && chmod a+r /minecraft*
+RUN chmod a-w -R /drunner && chmod a+r /minecraft*
+
+EXPOSE 25565
 
 # lock in druser.
 USER druser
-
-# expose volume
-VOLUME /config /data
