@@ -1,4 +1,4 @@
-# drunner-minecraft
+# drunner/minecraft
 
 A simple dRunner compatible Minecraft container.
 
