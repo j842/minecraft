@@ -1,6 +1,8 @@
 #!/bin/bash
 # Service configuration.
 
+VERSION=2
+
 # Array for volume containers that are handled by dr.
 # These can be used in any Docker image that's part of this service.
 #
@@ -8,7 +10,7 @@
 # e.g.
 # VOLUMES=("/config" "/data")
 
-VOLUMES=("/config" "/data")
+VOLUMES=("/config" "/minecraft/data")
 
 # Additional containers used by the service. Only set when we have
 # multiple containers (e.g. database container...)
