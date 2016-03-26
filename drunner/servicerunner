@@ -64,12 +64,12 @@ function dockerrun {
 #------------------------------------------------------------------------------------
 # Run a detached command in the container.
 
-# detached, can't remove.
-function dockerrund {
-   docker run -d "${COMMANDOPTS[@]}" --name="${SERVICENAME}-${COMMAND}" -h "${HOSTNAME}" "${DOCKEROPTS[@]}" "${IMAGENAME}" "$@"
-   [ $? -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
-}
-
+# # detached, can't remove.
+# function dockerrund {
+#    docker run -d "${COMMANDOPTS[@]}" --name="${SERVICENAME}-${COMMAND}" -h "${HOSTNAME}" "${DOCKEROPTS[@]}" "${IMAGENAME}" "$@"
+#    [ $? -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
+# }
+#
 
 #------------------------------------------------------------------------------------
 # Get the port from the configuration file.
@@ -86,8 +86,8 @@ function getPort {
 # Display the status of the service.
 
 function showStatus {
-   container_exists "${SERVICENAME}-start"  || { echo "${SERVICENAME}'s container is stopped and removed." ; exit 0 ; }
-   container_running "${SERVICENAME}-start" || { echo "${SERVICENAME}'s container is stopped but not removed." ; exit 0 ; }
+   container_exists "${CONTAINERNAME}"  || { echo "${SERVICENAME}'s container is stopped and removed." ; exit 0 ; }
+   container_running "${CONTAINERNAME}" || { echo "${SERVICENAME}'s container is stopped but not removed." ; exit 0 ; }
    getPort
    echo "Minecraft is running on ${HOSTIP}:${PORT}"
 }
@@ -96,8 +96,9 @@ function showStatus {
 # check if running, if so stop it.
 
 function stopService {
-   ! container_running "${SERVICENAME}-start" || docker stop --time=30 "${SERVICENAME}-start" >/dev/null 2>&1
-   ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
+   # ! container_running "${CONTAINERNAME}" || docker stop --time=30 "${CONTAINERNAME}" >/dev/null 2>&1
+   # ! container_exists "${CONTAINERNAME}"  || docker rm "${CONTAINERNAME}" >/dev/null 2>&1
+   PORT="65535" docker-compose -p "${SERVICENAME}" down
 }
 
 #------------------------------------------------------------------------------------
@@ -108,6 +109,8 @@ function main {
 
    COMMAND="${1}" ; shift
    COMMANDOPTS=("-i")
+
+   CONTAINERNAME="${SERVICENAME}_minecraft_1"
 
    case "$COMMAND" in
          install)
@@ -125,19 +128,25 @@ function main {
             # data volume is automatically backed up, we just need to pause the service so it's
             # warm not hot!
             #BACKUPPATH="$1"
-            ! container_running "${SERVICENAME}-start" || docker pause "${SERVICENAME}-start"
+            if [ container_running "${CONTAINERNAME}" ]; then
+               getPort
+               PORT="${PORT}" docker-compose -p "${SERVICENAME}" pause
+            fi
             ;;
 
          backup_end)
             # resume if paused.
             #BACKUPPATH="$1"
-            ! container_paused "${SERVICENAME}-start" || docker unpause "${SERVICENAME}-start"
+            if [ container_paused "${CONTAINERNAME}" ]; then
+               getPort
+               PORT="${PORT}" docker-compose -p "${SERVICENAME}" unpause
+            fi
             ;;
 
          restore_end)
             # restore only ever called into empty service
             #RESTOREPATH="$1"
-            ! container_running "${SERVICENAME}-start" || die "${SERVICENAME} is running while restoring! This should never happen as restore should only work to an empty service."
+            ! container_running "${CONTAINERNAME}" || die "${SERVICENAME} is running while restoring! This should never happen as restore should only work to an empty service."
             ;;
 
          help)
@@ -150,30 +159,27 @@ function main {
             ;;
 
          update_start)
-            ! container_running "${SERVICENAME}-start" || echo "${SERVICENAME} is running while we update. You may wish to stop then start after update to pick up changes."
+            ! container_running "${CONTAINERNAME}" || echo "${SERVICENAME} is running while we update. You may wish to stop then start after update to pick up changes."
             ;;
 
          selftest)
             ;;
 
          start)
-            ! container_running "${SERVICENAME}-start" || die "Already running" 3
-            ! container_exists "${SERVICENAME}-start"  || docker rm "${SERVICENAME}-start" >/dev/null 2>&1
+            ! container_running "${CONTAINERNAME}" || die "Already running" 3
 
             getPort
-            COMMANDOPTS=("-p=${PORT}:25565" "-p=${PORT}:25565/udp" "--restart=always")
-            dockerrund runminecraft.sh
+            PORT="${PORT}" docker-compose -p "${SERVICENAME}" up -d
             [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
             showStatus
             ;;
 
          configure)
-            ! container_running "${SERVICENAME}-start" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
+            ! container_running "${CONTAINERNAME}" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
             [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
             PORT="$1"
 
             dockerrun bash -c "echo -n $PORT > /config/port"
-
             ;;
 
          stop)
@@ -190,7 +196,7 @@ function main {
             [ "$#" -eq 1 ] || die "Import requires one argument (the path to of the world to be imported)."
             local SOURCEPATH=$(realpath "$1" | tr -d '\r\n')
             [ -d "$SOURCEPATH" ] || die "Path does not exist: $SOURCEPATH"
-            ! container_running "${SERVICENAME}-start" || die "Can't import while ${SERVICENAME} is started. Stop it first."
+            ! container_running "${CONTAINERNAME}" || die "Can't import while ${SERVICENAME} is started. Stop it first."
 
             utils_import "$SOURCEPATH" "/minecraft/data"
             echo "Imported minecraft world from $SOURCEPATH."
@@ -200,7 +206,7 @@ function main {
             [ "$#" -eq 1 ] || die "Export requires one argument (the path to export the world to)."
             local DESTPATH=$(realpath "$1" | tr -d '\r\n')
             [ -d "$DESTPATH" ] || die "Please create the path first, e.g. ${CODE_S}mkdir -p ${1}${CODE_E}"
-            ! container_running "${SERVICENAME}-start" || die "Can't export while ${SERVICENAME} is started. Stop it first with ${CODE_S}${SERVICENAME} stop${CODE_E}"
+            ! container_running "${CONTAINERNAME}" || die "Can't export while ${SERVICENAME} is started. Stop it first with ${CODE_S}${SERVICENAME} stop${CODE_E}"
 
             utils_export "/minecraft/data" "$DESTPATH"
             echo "Imported minecraft world to $DESTPATH."
