@@ -85,7 +85,7 @@ function getPort {
 #------------------------------------------------------------------------------------
 # Display the status of the service.
 
-function showStatus {
+function showInfo {
    container_exists "${CONTAINERNAME}"  || { echo "${SERVICENAME}'s container is stopped and removed." ; exit 0 ; }
    container_running "${CONTAINERNAME}" || { echo "${SERVICENAME}'s container is stopped but not removed." ; exit 0 ; }
    getPort
@@ -171,7 +171,7 @@ function main {
             getPort
             PORT="${PORT}" docker-compose -p "${SERVICENAME}" up -d
             [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
-            showStatus
+            showInfo
             ;;
 
          configure)
@@ -185,31 +185,27 @@ function main {
          stop)
             stopService
             echo "New Status:"
-            showStatus
+            showInfo
             ;;
 
          info)
-            showStatus
+            showInfo
             ;;
 
          import)
             [ "$#" -eq 1 ] || die "Import requires one argument (the path to of the world to be imported)."
-            local SOURCEPATH=$(realpath "$1" | tr -d '\r\n')
-            [ -d "$SOURCEPATH" ] || die "Path does not exist: $SOURCEPATH"
             ! container_running "${CONTAINERNAME}" || die "Can't import while ${SERVICENAME} is started. Stop it first."
 
-            utils_import "$SOURCEPATH" "/minecraft/data"
-            echo "Imported minecraft world from $SOURCEPATH."
+            utils_import "$1" "/minecraft/data"
+            echo "Imported minecraft world from $1."
             ;;
 
          export)
             [ "$#" -eq 1 ] || die "Export requires one argument (the path to export the world to)."
-            local DESTPATH=$(realpath "$1" | tr -d '\r\n')
-            [ -d "$DESTPATH" ] || die "Please create the path first, e.g. ${CODE_S}mkdir -p ${1}${CODE_E}"
             ! container_running "${CONTAINERNAME}" || die "Can't export while ${SERVICENAME} is started. Stop it first with ${CODE_S}${SERVICENAME} stop${CODE_E}"
 
-            utils_export "/minecraft/data" "$DESTPATH"
-            echo "Imported minecraft world to $DESTPATH."
+            utils_export "/minecraft/data" "$1"
+            echo "Imported minecraft world to $1."
             ;;
 
          *)
