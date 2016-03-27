@@ -53,13 +53,13 @@ EOF
 #------------------------------------------------------------------------------------
 # Run a command in the container.
 
-function dockerrun {
-   local RVAL=0
-   docker run "${COMMANDOPTS[@]}" --name="${SERVICENAME}-${COMMAND}" -h "${HOSTNAME}" "${DOCKEROPTS[@]}" "${IMAGENAME}" "$@"
-   RVAL=$?
-   docker rm "${SERVICENAME}-${COMMAND}" >/dev/null
-   [ $RVAL -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
-}
+# function dockerrun {
+#    local RVAL=0
+#    docker run "${COMMANDOPTS[@]}" --name="${SERVICENAME}-${COMMAND}" -h "${HOSTNAME}" "${DOCKEROPTS[@]}" "${IMAGENAME}" "$@"
+#    RVAL=$?
+#    docker rm "${SERVICENAME}-${COMMAND}" >/dev/null
+#    [ $RVAL -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
+# }
 
 #------------------------------------------------------------------------------------
 # Run a detached command in the container.
@@ -70,17 +70,6 @@ function dockerrun {
 #    [ $? -eq 0 ] || die "${SERVICENAME} ${COMMAND} failed."
 # }
 #
-
-#------------------------------------------------------------------------------------
-# Get the port from the configuration file.
-
-function getPort {
-   PORT=$(docker run -i --name="${SERVICENAME}-getport" "${DOCKEROPTS[@]}" "${IMAGENAME}" bash -c "cat /config/port")
-   RVAL=$?
-   docker rm "${SERVICENAME}-getport" >/dev/null 2>&1
-   [ "$RVAL" -eq 0 ] || die "Failed to get port. Please run configure first."
-   [ -n "$PORT" ] || die "Run configure first!"
-}
 
 #------------------------------------------------------------------------------------
 # Display the status of the service.
@@ -96,12 +85,8 @@ function showInfo {
 # check if running, if so stop it.
 
 function stopService {
-   # ! container_running "${CONTAINERNAME}" || docker stop --time=30 "${CONTAINERNAME}" >/dev/null 2>&1
-   # ! container_exists "${CONTAINERNAME}"  || docker rm "${CONTAINERNAME}" >/dev/null 2>&1
-   #export SERVICENAME
-   #echo "SERVICENAME=${SERVICENAME}"
    /usr/bin/env
-   PORT="65535" docker-compose -p "${SERVICENAME}" down
+   docker-compose -p "${SERVICENAME}" down
 }
 
 #------------------------------------------------------------------------------------
@@ -132,8 +117,7 @@ function main {
             # warm not hot!
             #BACKUPPATH="$1"
             if [ container_running "${CONTAINERNAME}" ]; then
-               getPort
-               PORT="${PORT}" docker-compose -p "${SERVICENAME}" pause
+               docker-compose -p "${SERVICENAME}" pause
             fi
             ;;
 
@@ -141,8 +125,7 @@ function main {
             # resume if paused.
             #BACKUPPATH="$1"
             if [ container_paused "${CONTAINERNAME}" ]; then
-               getPort
-               PORT="${PORT}" docker-compose -p "${SERVICENAME}" unpause
+               docker-compose -p "${SERVICENAME}" unpause
             fi
             ;;
 
@@ -157,8 +140,8 @@ function main {
             ;;
 
          enter)
-            COMMANDOPTS=("-it")
-            dockerrun /bin/bash "$@"
+            #COMMANDOPTS=("-it")
+            #dockerrun /bin/bash "$@"
             ;;
 
          update_start)
@@ -171,8 +154,7 @@ function main {
          start)
             ! container_running "${CONTAINERNAME}" || die "Already running" 3
 
-            getPort
-            PORT="${PORT}" docker-compose -p "${SERVICENAME}" up -d
+            docker-compose -p "${SERVICENAME}" up -d
             [ $? -eq 0 ] || die "Failed to launch minecraft on port $PORT :("
             showInfo
             ;;
@@ -180,9 +162,8 @@ function main {
          configure)
             ! container_running "${CONTAINERNAME}" || die "Can't configure while ${SERVICENAME} is started. Stop it first."
             [ "$#" -eq 1 ] || { showhelp ; die "You need to specify the PORT."; }
-            PORT="$1"
 
-            dockerrun bash -c "echo -n $PORT > /config/port"
+            save_environment "PORT" "$1"
             ;;
 
          stop)
