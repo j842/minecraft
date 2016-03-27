@@ -21,3 +21,10 @@ volumes:
    data:
       external:
          name: "drunner-${SERVICENAME}-minecraftdata"
+
+# required to use save_environment, allowing us to define
+# configuration that dRunner puts in the environment when
+# servicerunner is called. We use it for the PORT.
+   env:
+      external:
+         name: "${SERVICENAME}-environment"
