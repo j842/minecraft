@@ -4,7 +4,6 @@ services:
    minecraft:
       image: drunner/minecraft
       volumes:
-         - "config:/config"
          - "data:/minecraft/data"
       ports:
          - "${PORT}:25565"
