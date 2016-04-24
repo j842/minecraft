@@ -111,8 +111,9 @@ function main {
             ;;
 
          enter)
-            # this leaves crufty containers running. Need to check what --rm does - will it remove the named volumes?
-            docker-compose -p "${SERVICENAME}" run minecraft /bin/bash "$@"
+            # this creates a new container and works when the service is stopped.
+            # We could be smarter and if it's running enter the already running container.
+            docker-compose -p "${SERVICENAME}" run --rm minecraft /bin/bash "$@"
             ;;
 
          update_start)
