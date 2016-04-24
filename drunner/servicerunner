@@ -111,6 +111,7 @@ function main {
             ;;
 
          enter)
+            # this leaves crufty containers running. Need to check what --rm does - will it remove the named volumes?
             docker-compose -p "${SERVICENAME}" run minecraft /bin/bash "$@"
             ;;
 
