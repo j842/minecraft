@@ -19,7 +19,7 @@ RUN groupadd -g 22922 drgroup \
 COPY ["./drunner","/drunner"]
 
 RUN chmod a-w -R /drunner && chmod a+r /minecraft*  \
-    && echo "#!/bin/bash\ncd /minecraft/data\necho "eula=true" > eula.txt\njava -Xms1G -Xmx1G -jar /minecraft/minecraft_server.1.9.jar nogui" >> /usr/local/bin/runminecraft.sh \
+    && echo "#!/bin/bash\ncd /minecraft/data\necho "eula=true" > eula.txt\njava -Xms1G -Xmx1G -jar /minecraft/minecraft_server.1.9.2.jar nogui" >> /usr/local/bin/runminecraft.sh \
     && chmod a+rx /usr/local/bin/runminecraft.sh
 
 EXPOSE 25565
