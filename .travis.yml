@@ -7,7 +7,7 @@ before_install:
 
 script:
    - ddev build
-   - dtest test -d drunner/minecraft
+   - ddev test
    - minecraft configure 55555
    - minecraft start
    - minecraft info
