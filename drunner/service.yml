@@ -1,0 +1,51 @@
+# drunner service configuration for helloworld
+#
+---
+configuration:
+   PORT:
+      description: "The port to run minecraft on."
+      default: 25565
+      type: port
+
+volumes:
+   drunner-${SERVICENAME}-minecraftdata:
+      manage: true
+      backup: true
+
+containers:
+   - drunner/helloworld
+
+commands:
+   stop:
+      - docker-compose -p "${SERVICENAME}" down
+   enter:
+      - docker-compose -p "${SERVICENAME}" run --rm minecraft /bin/bash "$@"
+   start:
+      - docker-compose -p "${SERVICENAME}" up -d
+#
+# - HOOKS -
+   obliterate_start:
+      - docker-compose -p "${SERVICENAME}" down
+   uninstall_start:
+      - docker-compose -p "${SERVICENAME}" down
+   backup_start:
+      - docker-compose -p "${SERVICENAME}" pause
+   backup_end:
+      - docker-compose -p "${SERVICENAME}" unpause minecraft
+
+help: |
+   NAME
+      ${SERVICENAME} - Runs minecraft
+
+   SYNOPSIS
+      ${SERVICENAME} help             - This help
+      ${SERVICENAME} configure [PORT] - Show configuration, or set PORT
+      ${SERVICENAME} start            - Make it go!
+      ${SERVICENAME} stop             - Stop it
+      ${SERVICENAME} info             - Is it running?
+
+      ${SERVICENAME} export PATH      - export world and config to PATH
+      ${SERVICENAME} import PATH      - import world and config from PATH
+
+   DESCRIPTION
+      Built from ${IMAGENAME}.
