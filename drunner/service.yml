@@ -16,8 +16,7 @@ containers:
 
 commands:
    _stop:
-      - docker stop drunner-${SERVICENAME}-minecraft
-      - docker rm drunner-${SERVICENAME}-minecraft
+      - dstop drunner-${SERVICENAME}-minecraft
 
    stop:
       - _stop
