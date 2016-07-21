@@ -19,7 +19,8 @@ commands:
       - docker stop drunner-${SERVICENAME}-minecraft
       - docker rm drunner-${SERVICENAME}-minecraft
 
-   stop: _stop
+   stop:
+      - _stop
 
    start:
       - docker run -d
