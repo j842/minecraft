@@ -9,29 +9,36 @@ configuration:
 
 volumes:
    drunner-${SERVICENAME}-minecraftdata:
-      manage: true
       backup: true
 
 containers:
    - drunner/minecraft
 
 commands:
-   stop:
-      - docker-compose -p "${SERVICENAME}" down
-   enter:
-      - docker-compose -p "${SERVICENAME}" run --rm minecraft /bin/bash "$@"
+   _stop:
+      - docker stop drunner-${SERVICENAME}-minecraft
+      - docker rm drunner-${SERVICENAME}-minecraft
+
+   stop: _stop
+
    start:
-      - docker-compose -p "${SERVICENAME}" up -d
+      - docker run -d
+         -p ${PORT}:25565 -p ${PORT}:25565/udp
+         -v drunner-${SERVICENAME}-data:/minecraft/data
+         --restart=always
+         --name drunner-${SERVICENAME}-minecraft
+         /usr/local/bin/runminecraft.sh
+
 #
 # - HOOKS -
    obliterate_start:
-      - docker-compose -p "${SERVICENAME}" down
+      - _stop
    uninstall_start:
-      - docker-compose -p "${SERVICENAME}" down
+      - _stop
    backup_start:
-      - docker-compose -p "${SERVICENAME}" pause
+      - docker pause drunner-${SERVICENAME}-minecraft
    backup_end:
-      - docker-compose -p "${SERVICENAME}" unpause minecraft
+      - docker resume drunner-${SERVICENAME}-minecraft
 
 help: |
    NAME
@@ -42,10 +49,6 @@ help: |
       ${SERVICENAME} configure [PORT] - Show configuration, or set PORT
       ${SERVICENAME} start            - Make it go!
       ${SERVICENAME} stop             - Stop it
-      ${SERVICENAME} info             - Is it running?
-
-      ${SERVICENAME} export PATH      - export world and config to PATH
-      ${SERVICENAME} import PATH      - import world and config from PATH
 
    DESCRIPTION
       Built from ${IMAGENAME}.
