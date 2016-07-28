@@ -14,11 +14,11 @@ end
 -- everything past here are functions that can be run from the commandline,
 -- e.g. helloworld run
 
-function run()
+function start()
   result=drun("docker run -d -p ${PORT}:25565 -p ${PORT}:25565/udp "..
   "-v drunner-${SERVICENAME}-minecraftdata:/minecraft/data " ..
   "--restart=always --name drunner-${SERVICENAME}-minecraft " ..
-  "/usr/local/bin/runminecraft.sh")
+  "drunner/minecraft /usr/local/bin/runminecraft.sh")
 
   if result~=0 then
      print("Failed to start minecraft.")
