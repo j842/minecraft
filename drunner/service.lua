@@ -4,7 +4,8 @@ function drunner_setup()
 -- addconfig(NAME, DESCRIPTION, DEFAULT VALUE, TYPE, REQUIRED)
    addconfig("PORT","The port to run minecraft on.","25565","port",true)
 
--- addvolume(NAME, BACKUP, EXTERNAL)
+-- addvolume(NAME, [BACKUP], [EXTERNAL])
+   addvolume("drunner-${SERVICENAME}-minecraftdata")
 
 -- addcontainer(NAME)
    addcontainer("drunner/minecraft")  -- First one must always be this container.
@@ -15,10 +16,10 @@ end
 -- e.g. helloworld run
 
 function start()
-  result=drun("docker run -d -p ${PORT}:25565 -p ${PORT}:25565/udp "..
-  "-v drunner-${SERVICENAME}-minecraftdata:/minecraft/data " ..
-  "--restart=always --name drunner-${SERVICENAME}-minecraft " ..
-  "drunner/minecraft /usr/local/bin/runminecraft.sh")
+  result=drun("docker", "run", "-d", "-p", "${PORT}:25565", "-p", "${PORT}:25565/udp",
+  "-v", "drunner-${SERVICENAME}-minecraftdata:/minecraft/data",
+  "--restart=always","--name","drunner-${SERVICENAME}-minecraft",
+  "drunner/minecraft","/usr/local/bin/runminecraft.sh")
 
   if result~=0 then
      print("Failed to start minecraft.")
@@ -38,11 +39,11 @@ function uninstall_start()
 end
 
 function backup_start()
-   drun("docker pause drunner-${SERVICENAME}-minecraft")
+   drun("docker","pause","drunner-${SERVICENAME}-minecraft")
 end
 
 function backup_end()
-   drun("docker resume drunner-${SERVICENAME}-minecraft")
+   drun("docker","resume","drunner-${SERVICENAME}-minecraft")
 end
 
 function help()
