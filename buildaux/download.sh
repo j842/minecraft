@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # read in VERSION variable.
 source /buildaux/version.sh
 SCRIPTPATH="/usr/local/bin/runminecraft.sh"
