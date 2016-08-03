@@ -2,13 +2,13 @@ language: cpp
 sudo: required
 dist: trusty
 before_install:
-   - wget -nv https://drunner.s3.amazonaws.com/install_drunner_travis.sh
+   - wget -nv https://drunner.s3.amazonaws.com/lin/install_drunner_travis.sh
    - /bin/bash install_drunner_travis.sh
 
 script:
    - ddev build
-   - ddev test
+#   - ddev test
    - minecraft configure 55555
    - minecraft start
-   - minecraft info
+#   - minecraft info
    - minecraft stop
