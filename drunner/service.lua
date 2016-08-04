@@ -46,6 +46,10 @@ function backup_end()
    drun("docker","resume","drunner-${SERVICENAME}-minecraft")
 end
 
+function info()
+   print("Info is not yet implemented.")
+end
+
 function help()
    return [[
    NAME
