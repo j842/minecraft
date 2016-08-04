@@ -8,8 +8,8 @@ before_install:
 
 script:
    - ddev build
-#   - ddev test
-   - minecraft configure 55555
+   - ddev test
+   - minecraft configure PORT=55555
    - minecraft start
-#   - minecraft info
+   - minecraft info
    - minecraft stop
