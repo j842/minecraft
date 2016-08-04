@@ -4,6 +4,7 @@ dist: trusty
 before_install:
    - wget -nv https://drunner.s3.amazonaws.com/lin/install_drunner_travis.sh
    - /bin/bash install_drunner_travis.sh
+   - export PATH=$PATH:$HOME/.drunner/bin/
 
 script:
    - ddev build
