@@ -54,6 +54,12 @@ function info()
    print("Info is not yet implemented.")
 end
 
+function enter()
+   print("Run:")
+   print(dsub("docker exec -ti drunner-${SERVICENAME}-minecraft /bin/bash"))
+end
+
+
 function help()
    return [[
    NAME
