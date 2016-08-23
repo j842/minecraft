@@ -10,10 +10,12 @@ RUN apt-get update && \
 
 COPY ["./buildaux","/buildaux"]
 COPY ["./drunner","/drunner"]
+
 RUN groupadd -g 22922 drgroup \
-    && adduser --disabled-password --gecos '' -u 22922 --gid 22922 druser \
-    && /bin/bash /buildaux/download.sh \
-    && chmod a-w -R /drunner
+    && adduser --disabled-password --gecos '' -u 22922 --gid 22922 druser
+RUN /bin/bash /buildaux/download.sh
+RUN /bin/bash /buildaux/createlaunchscript.sh
+RUN chmod a-w -R /drunner
 
 EXPOSE 25565
 

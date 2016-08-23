@@ -23,7 +23,7 @@ function start()
   "-v", "drunner-${SERVICENAME}-minecraftdata:/minecraft/data",
   "-e", "XMS", "-e", "XMX",
   "--restart=always","--name","drunner-${SERVICENAME}-minecraft",
-  "drunner/minecraft","/usr/local/bin/runminecraft.sh")
+  "${IMAGENAME}","/usr/local/bin/runminecraft.sh")
 
   if result~=0 then
      print("Failed to start minecraft.")
