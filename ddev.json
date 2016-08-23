@@ -12,7 +12,7 @@
             },
             {
                 "key": "TAG",
-                "value": "drunner/minecraft"
+                "value": "drunner/minecraft:local"
             }
         ]
     }

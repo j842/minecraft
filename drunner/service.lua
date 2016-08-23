@@ -3,12 +3,13 @@
 function drunner_setup()
 -- addconfig(NAME, DESCRIPTION, DEFAULT VALUE, TYPE, REQUIRED)
    addconfig("PORT","The port to run minecraft on.","25565","port",true)
+   addconfig("XMS","Initial memory allocation","1G","string",true)
+   addconfig("XMX","Maximum memory allocation","2G","string",true)
 
 -- addvolume(NAME, [BACKUP], [EXTERNAL])
    addvolume("drunner-${SERVICENAME}-minecraftdata")
 
 -- addcontainer(NAME)
-   addcontainer("drunner/minecraft")  -- First one must always be this container.
 end
 
 
@@ -16,8 +17,11 @@ end
 -- e.g. helloworld run
 
 function start()
+  print(dsub("Launching minecraft with ${XMS} memory (${XMX} max)"))
+
   result=drun("docker", "run", "-d", "-p", "${PORT}:25565", "-p", "${PORT}:25565/udp",
   "-v", "drunner-${SERVICENAME}-minecraftdata:/minecraft/data",
+  "-e", "XMS", "-e", "XMX",
   "--restart=always","--name","drunner-${SERVICENAME}-minecraft",
   "drunner/minecraft","/usr/local/bin/runminecraft.sh")
 

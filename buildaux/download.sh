@@ -15,7 +15,8 @@ tee ${SCRIPTPATH} <<EOF
 #!/bin/bash
 cd /minecraft/data
 echo "eula=true" > eula.txt
-java -Xms1G -Xmx2G -jar /minecraft/minecraft_server.${VERSION}.jar nogui
+echo java "-Xms${XMS}" "-Xmx${XMX}" -jar "/minecraft/minecraft_server.${VERSION}.jar" nogui
+java "-Xms${XMS}" "-Xmx${XMX}" -jar "/minecraft/minecraft_server.${VERSION}.jar" nogui
 EOF
 
 chmod a+rx ${SCRIPTPATH}
