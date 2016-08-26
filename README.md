@@ -7,11 +7,13 @@ a host just by using different ports. :-)
 
 This is a version 2 dService, so requires the C++ version of dRunner.
 
+See also drunner/minecraftviewer for providing the minecraft map via a webpage.
+
 ## Use
 
 ```
 drunner install drunner/minecraft
-minecraft configure 25565
+minecraft configure port=25565
 minecraft start
 ```
 
