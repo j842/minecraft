@@ -15,23 +15,33 @@ end
 
 -- everything past here are functions that can be run from the commandline,
 -- e.g. helloworld run
+containername = "drunner-${SERVICENAME}-minecraft"
 
 function start()
-  print(dsub("Launching minecraft with ${XMS} memory (${XMX} max)"))
+   print(dsub("Launching minecraft with ${XMS} memory (${XMX} max)"))
 
-  result=drun("docker", "run", "-d", "-p", "${PORT}:25565", "-p", "${PORT}:25565/udp",
-  "-v", "drunner-${SERVICENAME}-minecraftdata:/minecraft/data",
-  "-e", "XMS", "-e", "XMX",
-  "--restart=always","--name","drunner-${SERVICENAME}-minecraft",
-  "${IMAGENAME}","/usr/local/bin/runminecraft.sh")
+   if (drunning(containername)) then
+      print("Minecraft is already running.")
+   else
+      result=drun("docker", "run", "-d",
+      "-p", "${PORT}:25565",
+      "-p", "${PORT}:25565/udp",
+      "-v", "drunner-${SERVICENAME}-minecraftdata:/minecraft/data",
+      "-e", "XMS",
+      "-e", "XMX",
+      "--restart=always",
+      "--name", containername,
+      "${IMAGENAME}",
+      "/usr/local/bin/runminecraft.sh")
 
-  if result~=0 then
-     print("Failed to start minecraft.")
+      if result~=0 then
+        print("Failed to start minecraft.")
+      end
    end
 end
 
 function stop()
-  dstop("drunner-${SERVICENAME}-minecraft")
+   dstop(containername)
 end
 
 function obliterate_start()
@@ -43,20 +53,24 @@ function uninstall_start()
 end
 
 function backup_start()
-   drun("docker","pause","drunner-${SERVICENAME}-minecraft")
+   drun("docker","pause",containername)
 end
 
 function backup_end()
-   drun("docker","resume","drunner-${SERVICENAME}-minecraft")
+   drun("docker","resume",containername)
 end
 
 function info()
-   print("Info is not yet implemented.")
+   if (drunning(containername)) then
+      print(dsub("Minecraft is running on port ${PORT}."))
+   else
+      print("Minecraft is not currently running.")
+   end
 end
 
 function enter()
    print("Run:")
-   print(dsub("docker exec -ti drunner-${SERVICENAME}-minecraft /bin/bash"))
+   print(dsub("docker exec -ti "..containername.." /bin/bash"))
 end
 
 
