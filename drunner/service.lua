@@ -57,7 +57,7 @@ function backup_start()
 end
 
 function backup_end()
-   drun("docker","resume",containername)
+   drun("docker","unpause",containername)
 end
 
 function info()
