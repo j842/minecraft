@@ -12,10 +12,21 @@ See also drunner/minecraftviewer for providing the minecraft map via a webpage.
 ## Use
 
 ```
-drunner install drunner/minecraft
+drunner install minecraft
 minecraft configure port=25565
 minecraft start
 ```
+
+## Modifying server settings
+
+```
+docker run -ti -v drunner-minecraft-minecraftdata:/mc drunner/drunner_utils /bin/bash
+nano -w /mc/server.properties
+exit
+minecraft stop
+minecraft start
+```
+
 
 ## Help
 
@@ -28,11 +39,7 @@ SYNOPSIS
    ${SERVICENAME} configure PORT  - Configure for port PORT
    ${SERVICENAME} start           - Make it go!
    ${SERVICENAME} stop            - Stop it
-   ${SERVICENAME} info            - Is it running?
-   
-   ${SERVICENAME} export PATH     - export world and config to PATH
-   ${SERVICENAME} import PATH     - import world and config from PATH
-   
+
 DESCRIPTION
    Built from ${IMAGENAME}.   
 ```
