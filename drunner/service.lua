@@ -1,10 +1,12 @@
 -- drunner service configuration for helloworld
 
 function drunner_setup()
--- addconfig(NAME, DESCRIPTION, DEFAULT VALUE, TYPE, REQUIRED)
-   addconfig("PORT","The port to run minecraft on.","25565","port",true)
-   addconfig("XMS","Initial memory allocation","1G","string",true)
-   addconfig("XMX","Maximum memory allocation","2G","string",true)
+-- addconfig(NAME, DESCRIPTION, DEFAULT VALUE, TYPE, REQUIRED, USERSETTABLE)
+   addconfig("PORT","The port to run minecraft on.","25565","port",true,true)
+   addconfig("XMS","Initial memory allocation","1G","string",true,true)
+   addconfig("XMX","Maximum memory allocation","2G","string",true,true)
+
+   addconfig("RUNNING","Is the service running","false","bool",true,false)
 
 -- addvolume(NAME, [BACKUP], [EXTERNAL])
    addvolume("drunner-${SERVICENAME}-minecraftdata")
@@ -19,6 +21,8 @@ containername = "drunner-${SERVICENAME}-minecraft"
 
 function start()
    print(dsub("Launching minecraft with ${XMS} memory (${XMX} max)"))
+
+   dconfig_set("RUNNING","true")
 
    if (drunning(containername)) then
       print("Minecraft is already running.")
@@ -41,7 +45,8 @@ function start()
 end
 
 function stop()
-   dstop(containername)
+  dconfig_set("RUNNING","false")
+  dstop(containername)
 end
 
 function obliterate_start()
@@ -50,6 +55,16 @@ end
 
 function uninstall_start()
    stop()
+end
+
+function update_start()
+   dstop(containername)
+end
+
+function update_end()
+   if (dconfig_get("RUNNING")=="true") then
+      start()
+   end
 end
 
 function backup_start()
