@@ -44,7 +44,6 @@ end
 
 function update()
    stop()
--- hmmm
    dockerpull("drunner/minecraft")
    start()
 end
@@ -64,8 +63,7 @@ function info()
 end
 
 function enter()
-   print("Run:")
-   print(dsub("docker exec -ti "..containername.." /bin/bash"))
+   os_exec("docker exec -ti "..containername.." /bin/bash")
 end
 
 
