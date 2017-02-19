@@ -2,11 +2,14 @@
 
 -- addconfig( VARIABLENAME, DEFAULTVALUE, DESCRIPTION )
 addconfig("PORT","25565","The port to run minecraft on.")
-addconfig("XMS","1G","Initial memory allocation","1G")
-addconfig("XMX","2G","Maximum memory allocation","2G")
+addconfig("XMS","1G","Initial memory allocation")
+addconfig("XMX","2G","Maximum memory allocation")
 
 datavol = "drunner-${SERVICENAME}-minecraftdata"
 containername = "drunner-${SERVICENAME}-minecraft"
+
+-- source for this image is in the docker folder.
+imagename = "j842/minecraft"
 
 function start()
    print(dsub("Launching minecraft with ${XMS} memory (${XMX} max)"))
@@ -22,7 +25,7 @@ function start()
       "-e", "XMX",
       "--restart=always",
       "--name", containername,
-      "${IMAGENAME}",
+      imagename,
       "/usr/local/bin/runminecraft.sh")
 
       if result~=0 then
@@ -45,7 +48,7 @@ end
 
 function update()
    stop()
-   dockerpull("drunner/minecraft")
+   dockerpull(imagename)
    start()
 end
 
