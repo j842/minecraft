@@ -15,9 +15,6 @@ COPY ["./buildaux","/buildaux"]
 RUN /bin/bash /buildaux/download.sh
 RUN /bin/bash /buildaux/createlaunchscript.sh
 
-COPY ["./drunner","/drunner"]
-RUN chmod a-w -R /drunner
-
 EXPOSE 25565
 
 # lock in druser.
