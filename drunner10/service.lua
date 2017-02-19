@@ -14,7 +14,7 @@ imagename = "j842/minecraft"
 function start()
    print(dsub("Launching minecraft with ${XMS} memory (${XMX} max)"))
 
-   if (drunning(containername)) then
+   if (dockerrunning(containername)) then
       print("Minecraft is already running.")
    else
       result=docker("run", "-d",
@@ -42,6 +42,9 @@ function obliterate()
    stop()
 end
 
+function install()
+end
+
 function uninstall()
    stop()
 end
@@ -59,7 +62,7 @@ function backup()
 end
 
 function info()
-   if (drunning(containername)) then
+   if (dockerrunning(containername)) then
       print(dsub("Minecraft is running on port ${PORT}."))
    else
       print("Minecraft is not currently running.")
