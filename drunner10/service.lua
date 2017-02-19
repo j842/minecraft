@@ -40,9 +40,11 @@ end
 
 function obliterate()
    stop()
+   dockerdeletevolume(datavol)
 end
 
 function install()
+   dockercreatevolume(datavol)
 end
 
 function uninstall()
