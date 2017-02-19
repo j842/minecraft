@@ -29,7 +29,7 @@ function start()
       "/usr/local/bin/runminecraft.sh")
 
       if result~=0 then
-        print("Failed to start minecraft.")
+        die("Failed to start minecraft.")
       end
    end
 end
@@ -63,6 +63,11 @@ function backup()
    docker("unpause",containername)
 end
 
+function restore()
+   stop()
+   dockerrestore(datavol)
+end
+
 function info()
    if (dockerrunning(containername)) then
       print(dsub("Minecraft is running on port ${PORT}."))
@@ -73,6 +78,15 @@ end
 
 function enter()
    os_exec("docker exec -ti "..containername.." /bin/bash")
+end
+
+function selftest()
+   print("Starting")
+   start()
+   print("Stopping")
+   stop()
+   print("Info")
+   info()
 end
 
 

@@ -1,3 +1,4 @@
+# This yml file can be used to test any dService! Also requires a .ddev file.
 language: cpp
 sudo: required
 dist: trusty
@@ -7,11 +8,8 @@ before_install:
    - export PATH=$PATH:$HOME/.drunner/bin/
 
 script:
-   - drunner install . minecraft
-   - ddev test minecraft
-   - minecraft help
-   - minecraft start
-   - minecraft stop
-   - drunner uninstall minecraft
-   - drunner obliterate minecraft
+   - ddev build selftest
+   - ddev test selftest
+   - drunner uninstall selftest
+   - drunner obliterate selftest
    
