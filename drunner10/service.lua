@@ -1,8 +1,9 @@
 -- drunner 1.0 service definition for minecraft
 
-addenv("PORT","25565","The port to run minecraft on.")
-addenv("XMS","1G","Initial memory allocation","1G")
-addenv("XMX","2G","Maximum memory allocation","2G")
+-- addconfig( VARIABLENAME, DEFAULTVALUE, DESCRIPTION )
+addconfig("PORT","25565","The port to run minecraft on.")
+addconfig("XMS","1G","Initial memory allocation","1G")
+addconfig("XMX","2G","Maximum memory allocation","2G")
 
 datavol = "drunner-${SERVICENAME}-minecraftdata"
 containername = "drunner-${SERVICENAME}-minecraft"
